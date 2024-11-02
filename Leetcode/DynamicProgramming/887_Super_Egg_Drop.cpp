@@ -2,70 +2,61 @@
 
 class Solution {
 public:
+    // Memoization table to store results for subproblems
+    int dp[101][10001];
 
-    vector<vector<int>> dp;
-    //Using DP memoization
-    int solve(int k, int n)
-    {
-        //case where floor is only 0 or 1. then return the count of floors.
-        if(n == 0 or n == 1)
-        {
-            return n;
+    // Recursive function to calculate minimum number of attempts
+    // required to find the critical floor
+    int solve(int k, int n) {
+        // Base cases
+        if (n == 0 || n == 1) {
+            return n; // 0 or 1 floor requires 0 or 1 attempt
         }
-        //if the egg count is 1. then the number of trials will be equal to the number of floors left. because we have to check every floor.
-        if(k == 1)
-        {
-            return n;
+        if (k == 1) {
+            return n; // With one egg, we have to try every floor
         }
-        //if the solution for the subproblem is already stored, then return the result.
-        if(dp[n][k] != -1)
-        {
-            return dp[n][k];
+
+        // If result is already calculated, use it to save computation
+        if (dp[k][n] != -1) {
+            return dp[k][n];
         }
-        int ans = INT_MAX;
-        int left = 1;
-        int right = n;
-        //using binary search to reduce the search time.
-        while(left <= right)
-        {
-            int mid = (left + right)/2;
-            //two scenarios, where an egg breaks or the eggs doesn't break.
-            int breakegg = 0;
-            int notbreak = 0;
-            //checking for the subproblem present in the dp.
-            if(dp[mid-1][k-1] != -1)
-            {
-                breakegg = dp[mid-1][k-1];
-            }
-            else
-            {
-                breakegg = solve(k-1, mid-1);
-            }
-            if(dp[n-mid][k] != -1)
-            {
-                notbreak = dp[n-mid][k];
-            }
-            else
-            {
-                notbreak = solve(k, n - mid);
-            }
-            //here we are taking the maximum of worst case trails for breaking and not breaking and taking the minimum trails needed from all such floors.
-            ans = std::min(std::max(breakegg, notbreak), ans);
-            //if the worst case for breaking the egg is more, then we go down the floors and try to minimize the breaking egg scenarios.
-            if(breakegg > notbreak)
-            {
-                right = mid-1;
-            }//else we will try the upper floors for more breaking scenarios
-            else
-            {
-                left = mid+1;
+
+        long long minresult = INT_MAX; // Initialize minimum attempts as max value
+        int start = 1; // Binary search starting point
+        int end = n;   // Binary search ending point
+
+        // Use binary search to optimize the choice of floor
+        while (start <= end) {
+            int mid = (start + end) / 2;
+
+            // Recursively compute results for breaking and non-breaking cases
+            int breakegg = solve(k - 1, mid - 1);  // Case when egg breaks
+            int nobreakegg = solve(k, n - mid);    // Case when egg doesn't break
+
+            // Calculate number of attempts for this floor choice
+            long long tempans = 1 + std::max(breakegg, nobreakegg);
+
+            // Update the minimum number of attempts needed
+            minresult = std::min(minresult, tempans);
+
+            // Adjust search range based on which case had more attempts
+            if (breakegg > nobreakegg) {
+                end = mid - 1;
+            } else {
+                start = mid + 1;
             }
         }
-        return dp[n][k] = ans + 1;
+
+        // Store the computed result in dp array
+        return dp[k][n] = minresult;
     }
 
+    // Main function to find the minimum number of attempts needed
     int superEggDrop(int k, int n) {
-        dp = vector<vector<int>>(n+1, vector<int>(k+1, -1));
+        // Initialize dp array with -1 (uncomputed state)
+        memset(dp, -1, sizeof(dp));
+        
+        // Start solving with given eggs (k) and floors (n)
         return solve(k, n);
     }
 };
