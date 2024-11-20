@@ -56,6 +56,60 @@ void update(int index, int low, int high, int val, int node, vector<int>& arr)
     seg[index] = std::min(seg[2*index+1], seg[2*index+2]);
 }
 
+vector<int> tree(4*n), lazyTree(4*n, 0);   // lazyTree is extra tree which stores the value which is to be added @ that node.
+                                            //  i.e. at index i u got one node in tree and one more extra node in lazyTree.
+ 
+void updateRange(int node, int st, int en, int l, int r, int val)
+{
+ 
+    // case 1.  Invalid or out of range
+    if (l > en || r < st || l > r)
+        return;
+ 
+    
+    // first see u have extra data stored in lazy tree for this current node 
+    if(lazyTree[node] != 0)
+    {
+        tree[node] += lazyTree[node] * (r - l + 1); // val * no of child nodes
+ 
+        // propagate lazyTree[node] value for child nodes as well so that for next time we can relax that node as well.
+        if(l != r) // if has child ?
+        {
+            tree[2*node] += lazyTree[node];  // left one
+            tree[2*node+1] += lazyTree[node]; // right one
+        }
+ 
+        // Since you have used lazyTree[node] value for current node so  make it 0
+        lazyTree[node] = 0;
+    }
+ 
+    // case 2. overlapping range 
+    if(l >= st && r <= en)
+    {
+        // update the value 
+        tree[node] += val * (r - l + 1);
+ 
+        // atleast update immediate children (will be updated in O(1) otherwise for all children u may need O(n)) the value
+         //   but we will update in lazyTree 
+        if( l != r) // has the children so not a leaf node 
+        {
+            lazyTree[2*node] += val;  
+            lazyTree[2*node+1] += val;  
+        }
+        return;  // since updation is done so return 
+    }
+ 
+    // case 3. partial overlap 
+    int mid = (st + en)/2;
+ 
+    // call for left sub tree & right : it will get the ans based on above logic
+    updateRange(node, st, mid, l, r, val);
+    updateRange(node, mid+1, en, l, r, val);
+ 
+    // update the current node  with whatever we got from left &  right 
+    tree[node] =  tree[2*node] + tree[2*node + 1];
+}
+
 int main()
 {
     vector<int> arr = {2,1,0,4,3,7};
